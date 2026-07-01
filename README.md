@@ -1,30 +1,28 @@
-# Terraform Module Template
+# tf-atom-apigateway-base-path-mapping-aws
 
 <!-- Badges: Update REPO_OWNER/REPO_NAME after creating from template -->
-[![CI](https://github.com/PlatformStackPulse/terraform-atom-molecule-module-template/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
-[![Release](https://github.com/PlatformStackPulse/terraform-atom-molecule-module-template/actions/workflows/auto-release.yml/badge.svg)](../../actions/workflows/auto-release.yml)
-[![CodeQL](https://github.com/PlatformStackPulse/terraform-atom-molecule-module-template/actions/workflows/codeql.yml/badge.svg)](../../actions/workflows/codeql.yml)
-[![Changelog](https://github.com/PlatformStackPulse/terraform-atom-molecule-module-template/actions/workflows/changelog.yml/badge.svg)](../../actions/workflows/changelog.yml)
-![Latest Release](https://img.shields.io/github/v/release/PlatformStackPulse/terraform-atom-molecule-module-template?label=latest%20release&sort=semver)
-![Terraform](https://img.shields.io/badge/terraform-%3E%3D1.6.0-blue?logo=terraform)
-![License](https://img.shields.io/github/license/PlatformStackPulse/terraform-atom-molecule-module-template)
+[![CI](https://github.com/PlatformStackPulse/tf-atom-apigateway-base-path-mapping-aws/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+[![Release](https://github.com/PlatformStackPulse/tf-atom-apigateway-base-path-mapping-aws/actions/workflows/auto-release.yml/badge.svg)](../../actions/workflows/auto-release.yml)
+[![CodeQL](https://github.com/PlatformStackPulse/tf-atom-apigateway-base-path-mapping-aws/actions/workflows/codeql.yml/badge.svg)](../../actions/workflows/codeql.yml)
+[![Changelog](https://github.com/PlatformStackPulse/tf-atom-apigateway-base-path-mapping-aws/actions/workflows/changelog.yml/badge.svg)](../../actions/workflows/changelog.yml)
+![Latest Release](https://img.shields.io/github/v/release/PlatformStackPulse/tf-atom-apigateway-base-path-mapping-aws?label=latest%20release&sort=semver)
+![Terraform](https://img.shields.io/badge/terraform-%3E%3D1.11.3-blue?logo=terraform)
+![License](https://img.shields.io/github/license/PlatformStackPulse/tf-atom-apigateway-base-path-mapping-aws)
 
-A production-ready template for creating Terraform modules following the **one module per repository** best practice, with built-in CI/CD, security scanning, testing, documentation generation, and publishing to public registries.
+Terraform atom module for managing an **API Gateway base path mapping** on AWS — the association that maps a custom domain name (and optional base path) to a specific REST API and stage. Built on the [tf-label](https://github.com/PlatformStackPulse/tf-label) convention for consistent naming, tagging, and the `enabled` toggle.
 
 ## Features
 
-- **One Module Per Repo** — Module lives at the root; no nested `modules/` directory
-- **Registry Publishing** — Auto-publish to Terraform Registry, Artifactory, or GitLab on release
-- **Native Terraform Testing** — `terraform test` with mock providers (no external tools)
-- **Security Scanning** — Trivy IaC scanning for HIGH/CRITICAL vulnerabilities
-- **Linting** — TFLint with AWS ruleset (preset "all")
-- **Auto Documentation** — terraform-docs generates README sections on every commit
-- **GitHub Actions CI/CD** — Workflows for the full module lifecycle
-- **Auto Release** — CI passes on main → auto-tag → GitHub Release created
-- **Pre-Commit Hooks** — Format, validate, lint, docs, and security on every commit
-- **Conventional Commits** — Enforced commit message format
-- **Semantic Versioning** — Automated version management and releases
-- **DevContainer** — VS Code remote development ready
+- **tf-label naming & tagging** — Consistent, namespaced IDs and tags via the `this` label module
+- **Enable/disable toggle** — `enabled = false` makes the module inert (creates nothing)
+- **Single responsibility (atom)** — One module per repo, module at the root; composes cleanly into molecules/cells
+- **Native Terraform testing** — `terraform test` unit suite with a mock AWS provider (no real AWS calls)
+- **Security scanning** — Trivy IaC scanning for HIGH/CRITICAL findings in CI
+- **Linting** — TFLint with the AWS ruleset (preset "all")
+- **Auto documentation** — terraform-docs keeps the inputs/outputs table current
+- **GitHub Actions CI/CD** — Format, validate, lint, test, and security gates on every push/PR
+- **Auto release** — CI green on `main` → semver auto-tag → GitHub Release
+- **Conventional commits + semantic versioning** — Enforced commit format drives releases
 
 ## CI Pipeline
 
@@ -77,15 +75,15 @@ See [TEMPLATE_GUIDE.md](TEMPLATE_GUIDE.md) for detailed instructions.
 
 ## Usage
 
-### From GitHub
-
 ```hcl
-module "this" {
-  source = "github.com/PlatformStackPulse/terraform-aws-my-module?ref=v1.0.0"
+module "base_path_mapping" {
+  source = "git::https://github.com/PlatformStackPulse/tf-atom-apigateway-base-path-mapping-aws.git?ref=v1.0.0"
 
-  name        = "my-resource"
+  # tf-label naming inputs
+  namespace   = "eg"
   environment = "dev"
-  namespace   = "myorg"
+  stage       = "test"
+  name        = "api"
 
   tags = {
     Project = "example"
@@ -94,21 +92,17 @@ module "this" {
 }
 ```
 
-### From Terraform Registry
+Set `enabled = false` to keep the module in the configuration without creating any resources:
 
 ```hcl
-module "this" {
-  source  = "PlatformStackPulse/my-module/aws"
-  version = "~> 1.0"
+module "base_path_mapping" {
+  source = "git::https://github.com/PlatformStackPulse/tf-atom-apigateway-base-path-mapping-aws.git?ref=v1.0.0"
 
-  name        = "my-resource"
+  enabled     = false
+  namespace   = "eg"
   environment = "dev"
-  namespace   = "myorg"
-
-  tags = {
-    Project = "example"
-    Owner   = "platform-engineering"
-  }
+  stage       = "test"
+  name        = "api"
 }
 ```
 
@@ -312,6 +306,27 @@ No resources.
 |------|-------------|
 | <a name="output_enabled"></a> [enabled](#output\_enabled) | Whether the module is enabled. |
 <!-- END_TF_DOCS -->
+
+## Tests
+
+This module ships native `terraform test` suites (no external tooling required).
+
+| Suite | Location | Provider | What it checks |
+|-------|----------|----------|----------------|
+| Unit | `tests/unit/main_test.tftest.hcl` | Mock AWS (`mock_provider`) | Plan-time behaviour: `enabled` pass-through when enabled (default) and when disabled |
+| Integration | `tests/integration/main_test.tftest.hcl` | Real AWS | Apply-time behaviour against a live account (opt-in) |
+
+Run the unit tests (fast, no credentials, no AWS calls):
+
+```bash
+terraform init -backend=false
+terraform test -test-directory=tests/unit
+# or via Makefile:
+make test-unit
+```
+
+The unit tests assert on plan-known values (tf-label pass-throughs) rather than
+computed ids/arns, which are unknown under a mock provider.
 
 ## Learning Materials
 
